@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<title>Texas Population Density, 2022</title>
 <h2>Texas Population Density, 2022</h2>
 <button id="colorButton">Change Color Scheme</button>
 <button id="countyButton">Toggle County Boundary</button>
@@ -36,11 +37,14 @@ div.tooltip {
 <script src="https://d3js.org/topojson.v2.min.js"></script>
 <script>
 
+//Whether or not to show the indivisual counties
 var showCounties = true;
+//Whether or not the color scheme should be red
 var schemeRed = true;
     
     var color;
-    
+  
+    //Make the colors have 9 main gradiants. They can be red or blue
      if(schemeRed){
     color = d3.scaleThreshold()
     .domain([1, 10, 50, 200, 500, 1000, 2000, 4000])
@@ -51,15 +55,17 @@ var schemeRed = true;
     .range(d3.schemeBlues[9]);   
     }
     
-
+//Make our view window the width and height of the svg element we are creating
 var svg = d3.select("svg"),
     width = +svg.attr("width"),
     height = +svg.attr("height");
 
+//Map the densities, county names, and state names to their respective IDs
 var densityById = d3.map();
 var nameById = d3.map();
 var stateById = d3.map();
  
+//make the tooltip div
 var div = d3
   .select('body')
   .append('div')
@@ -67,7 +73,7 @@ var div = d3
   .style('opacity', 0);
     
     
-
+//define the kind of map that we're making with size of the map and how far offset it will be.
 var projection = d3.geoAlbersUsa()
     .scale(2500)
     .translate([width / 2, height / 2 - 300]);
@@ -75,6 +81,7 @@ var projection = d3.geoAlbersUsa()
 var path = d3.geoPath()
     .projection(projection);
 
+//Make use of our data files and set the county ids to their corresponding data
 d3.queue()
     .defer(d3.json, "us-10m.json")
     .defer(d3.csv, "Population-Density By County.csv", function(d) { 
@@ -87,9 +94,12 @@ d3.queue()
     })
     .await(ready);
 
+//main function. Draws everything.
 function ready(error, us) {
+  //throw an error message if there is one
   if (error) throw error;
-    
+  
+    //Make the color scheme either red or blue depending on a boolean
     if(schemeRed){
     color = d3.scaleThreshold()
     .domain([1, 10, 50, 200, 500, 1000, 2000, 4000])
@@ -100,6 +110,7 @@ function ready(error, us) {
     .range(d3.schemeBlues[9]);   
     }
     
+  //make a g append
      var g = svg.append("g")
     .attr("class", "key")
     .attr("transform", "translate(0,40)");
@@ -107,7 +118,8 @@ function ready(error, us) {
     var x = d3.scaleSqrt()
     .domain([0, 4500])
     .rangeRound([440, 950]);
-    
+  
+    //draw recangle to show the color gradiants
     g.selectAll("rect")
   .data(color.range().map(function(d) {
       d = color.invertExtent(d);
@@ -121,6 +133,7 @@ function ready(error, us) {
     .attr("width", function(d) { return x(d[1]) - x(d[0]); })
     .attr("fill", function(d) { return color(d[0]); });
     
+  //"Population per square mile" text
     g.append("text")
     .attr("class", "caption")
     .attr("x", x.range()[0])
@@ -130,12 +143,14 @@ function ready(error, us) {
     .attr("font-weight", "bold")
     .text("Population per square mile");
 
+//make tick marks on the gradiant
 g.call(d3.axisBottom(x)
     .tickSize(13)
     .tickValues(color.domain()))
   .select(".domain")
     .remove();
-    
+  
+    //make it that if we click the button we change the boolean to the other value. Then we erase all graphics and reload with new graphics
     d3.select('#colorButton').on('click', function () {
 if(schemeRed){
    schemeRed = false;
@@ -145,7 +160,8 @@ if(schemeRed){
   d3.selectAll("svg > *").remove();
   ready(error, us);
 });
-                                 
+     
+      //make it that if we click the button we change the boolean to the other value. Then we erase all graphics and reload with new graphics
    d3.select('#countyButton').on('click', function () {
   if(showCounties){
    showCounties = false;
@@ -164,7 +180,7 @@ if(showCounties){
       .data(topojson.feature(us, us.objects.counties).features)
     .enter().append("path")
     .attr("fill",  function(d) { 
-      
+      //if the id's first two digits are 48 (as all Texas county ids do) we color them in
       if(parseInt(+d.id/1000) == 48){
       return color(densityById.get(d.id)); 
       }
@@ -203,7 +219,7 @@ if(showCounties){
     .enter().append("path")
     //.attr("fill",  function(d) { return color(rateById.get(d.id)); })
     .attr("fill",  function(d) { 
-      
+       //if the id is 48 (the id of Texas) then we color it in
       if(parseInt(+d.id) == 48){
       return color(500); 
       }
